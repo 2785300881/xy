@@ -271,7 +271,6 @@
     </form>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     // Supabase配置
     const SUPABASE_URL = 'https://twzpessassvmnnbrnegd.supabase.co';
@@ -344,7 +343,7 @@
     });
 
     registerForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
+        e.preventDefault();  // 确保这行代码存在
 
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
@@ -366,7 +365,10 @@
                 .select('username')
                 .eq('username', username);
 
-            if (checkError) throw checkError;
+            if (checkError) {
+                console.error('检查用户名错误:', checkError);
+                throw checkError;
+            }
 
             if (existingUsers && existingUsers.length > 0) {
                 document.getElementById('usernameError').textContent = '用户名已存在，请选择其他用户名';
@@ -376,13 +378,13 @@
                 return;
             }
 
-            // 创建新用户
+            // 创建新用户 - 修复数据格式
             const { data: newUser, error: insertError } = await supabase
                 .from('users')
                 .insert([
                     {
                         username: username,
-                        password: password,
+                        password: password, // 注意：生产环境应该加密
                         role: 'user',
                         full_name: `用户 ${username}`,
                         email: `${username}@campus.edu`,
@@ -398,15 +400,22 @@
                 ])
                 .select();
 
-            if (insertError) throw insertError;
+            if (insertError) {
+                console.error('插入用户错误:', insertError);
+                throw insertError;
+            }
 
-            // 显示成功消息
-            showSuccessMessage('🎉 注册成功！欢迎加入校园植被系统～');
+            if (newUser && newUser.length > 0) {
+                // 显示成功消息
+                showSuccessMessage('🎉 注册成功！欢迎加入校园植被系统～');
 
-            // 2秒后跳转到登录页
-            setTimeout(() => {
-                window.location.href = 'login.html?register=success';
-            }, 2000);
+                // 2秒后跳转到登录页
+                setTimeout(() => {
+                    window.location.href = 'login.html?register=success';
+                }, 2000);
+            } else {
+                throw new Error('注册失败，未返回用户数据');
+            }
 
         } catch (error) {
             console.error('注册错误:', error);
@@ -415,13 +424,15 @@
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
 
-            // 显示错误消息
+            // 显示具体的错误信息
+            let errorMessage = '😥 注册失败，请稍后重试！';
             if (error.message.includes('duplicate key')) {
-                document.getElementById('usernameError').textContent = '用户名已存在，请选择其他用户名';
-                document.getElementById('usernameError').style.display = 'block';
-            } else {
-                alert('😥 注册失败，请稍后重试！错误信息：' + error.message);
+                errorMessage = '😥 用户名已存在，请选择其他用户名';
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                errorMessage = '😥 网络连接失败，请检查网络后重试';
             }
+
+            alert(errorMessage + '\n错误详情：' + error.message);
         }
     });
 
