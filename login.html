@@ -241,7 +241,7 @@
     const loginForm = document.getElementById('loginForm');
 
     loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
+        e.preventDefault();  // 确保这行代码存在且执行
 
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
@@ -252,6 +252,12 @@
         }
 
         try {
+            // 显示加载状态
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '✨ 登录中... ✨';
+            submitBtn.disabled = true;
+
             // 查询用户
             const { data: users, error } = await supabase
                 .from('users')
@@ -270,21 +276,36 @@
                 localStorage.setItem('userRole', user.role);
                 localStorage.setItem('userId', user.id);
 
+                // 更新最后登录时间
+                await supabase
+                    .from('users')
+                    .update({ last_login: new Date().toISOString() })
+                    .eq('id', user.id);
+
                 if (user.role === 'admin' || user.role === 'super-admin') {
                     alert('👑 管理员登录成功！欢迎来到校园植被管理系统～');
                 } else {
                     alert('🪴 登录成功！欢迎来到校园植被系统～');
                 }
 
+                // 延迟跳转确保localStorage已保存
                 setTimeout(() => {
                     window.location.href = 'index.html?login=success';
-                }, 100);
+                }, 500);
+
             } else {
                 alert('😥 账号或密码错误，请重试！');
+                // 恢复按钮状态
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         } catch (error) {
             console.error('登录错误:', error);
             alert('😥 登录失败，请稍后重试！');
+            // 恢复按钮状态
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '✨ 立即登录 ✨';
+            submitBtn.disabled = false;
         }
     });
 
