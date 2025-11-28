@@ -273,10 +273,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // Supabase配置
-    const SUPABASE_URL = 'https://twzpessassvmnnbrnegd.supabase.co';
+    // Supabase配置 - 使用您提供的正确配置
+    const SUPABASE_URL = 'https://sgwbztuizxowiacpwzmy.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnd2J6dHVpenhvd2lhY3B3em15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzIyMDYsImV4cCI6MjA3OTkwODIwNn0.js6fUBJ9FGRMkVgp80Q-8D6hX-xXbr29rWKyJgOA9b4';
+
+    // 创建 Supabase 客户端
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    console.log('Supabase 初始化完成:', supabase);
 
     const registerForm = document.getElementById('registerForm');
 
@@ -352,10 +356,7 @@
         const confirmPassword = document.getElementById('confirmPassword').value;
 
         // 基本验证
-        if (!validateForm()) {
-            console.log('表单验证失败');
-            return;
-        }
+        if (!validateForm()) return;
 
         // 显示加载状态
         const submitBtn = registerForm.querySelector('button[type="submit"]');
@@ -372,12 +373,12 @@
                 .select('username')
                 .eq('username', username);
 
-            console.log('检查用户名结果:', existingUsers, checkError);
-
             if (checkError) {
                 console.error('检查用户名错误:', checkError);
                 throw checkError;
             }
+
+            console.log('用户名检查结果:', existingUsers);
 
             if (existingUsers && existingUsers.length > 0) {
                 document.getElementById('usernameError').textContent = '用户名已存在，请选择其他用户名';
@@ -387,7 +388,7 @@
                 return;
             }
 
-            console.log('开始创建用户');
+            console.log('开始创建新用户');
             // 创建新用户
             const { data: newUser, error: insertError } = await supabase
                 .from('users')
@@ -398,22 +399,27 @@
                         role: 'user',
                         full_name: `用户 ${username}`,
                         email: `${username}@campus.edu`,
+                        phone: '',
+                        department: '',
+                        student_id: '',
+                        bio: '热爱植物，喜欢探索校园中的各种植被。',
+                        plants_added: 0,
+                        last_login: new Date().toISOString(),
                         created_at: new Date().toISOString(),
                         updated_at: new Date().toISOString()
                     }
                 ])
                 .select();
 
-            console.log('创建用户结果:', newUser, insertError);
-
             if (insertError) {
                 console.error('插入用户错误:', insertError);
                 throw insertError;
             }
 
-            console.log('注册成功');
+            console.log('用户创建成功:', newUser);
+
             // 显示成功消息
-            alert('🎉 注册成功！欢迎加入校园植被系统～');
+            showSuccessMessage('🎉 注册成功！欢迎加入校园植被系统～');
 
             // 2秒后跳转到登录页
             setTimeout(() => {
@@ -428,7 +434,7 @@
             submitBtn.disabled = false;
 
             // 显示错误消息
-            if (error.message.includes('duplicate key') || error.message.includes('already exists')) {
+            if (error.message.includes('duplicate key')) {
                 document.getElementById('usernameError').textContent = '用户名已存在，请选择其他用户名';
                 document.getElementById('usernameError').style.display = 'block';
             } else {
@@ -437,11 +443,64 @@
         }
     });
 
+    // 显示成功消息函数
+    function showSuccessMessage(message) {
+        // 创建成功提示元素
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(76, 175, 80, 0.9);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 1000;
+                font-weight: bold;
+                animation: slideDown 0.3s ease;
+            ">
+                <i class="fa fa-check-circle" style="margin-right: 8px;"></i>
+                ${message}
+            </div>
+        `;
+
+        // 添加动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from {
+                    top: -50px;
+                    opacity: 0;
+                }
+                to {
+                    top: 20px;
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        document.body.appendChild(successDiv);
+
+        // 3秒后自动移除
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.parentNode.removeChild(successDiv);
+            }
+        }, 3000);
+    }
+
     // 页面加载时检查URL参数
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('注册页面加载完成');
+
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('redirect') === 'login') {
-            alert('请先注册账号！');
+            showSuccessMessage('请先注册账号！');
         }
 
         // 检查是否已登录，如果已登录则跳转到首页
@@ -450,7 +509,16 @@
             window.location.href = 'index.html';
         }
     });
-</script>
+
+    // 添加输入框回车键支持
+    document.querySelectorAll('.form-input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                registerForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    });
 
 </script>
 </body>
