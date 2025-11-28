@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录</title>
     <style>
-        /* 保持原有样式不变 */
         * {
             margin: 0;
             padding: 0;
@@ -25,6 +24,7 @@
             overflow: hidden;
         }
 
+        /* 卡通装饰元素（和主页风格统一） */
         .float-decor {
             position: absolute;
             z-index: 1;
@@ -43,6 +43,21 @@
             }
         }
 
+        @keyframes twinkle {
+            0% {
+                opacity: 0.6;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+            100% {
+                opacity: 0.6;
+                transform: scale(0.8);
+            }
+        }
+
         body::before {
             content: '';
             position: absolute;
@@ -54,13 +69,14 @@
             z-index: -1;
         }
 
+        /* 登录容器优化（透明度60%，更清晰） */
         .login-container {
-            background: rgba(255, 250, 205, 0.6);
+            background: rgba(255, 250, 205, 0.6); /* 透明度60% */
             padding: 45px 40px;
             border-radius: 30px;
             width: 100%;
             max-width: 420px;
-            border: 6px solid #FFD700;
+            border: 6px solid #FFD700; /* 金色边框 */
             box-shadow: 0 0 20px #FFD700, 0 0 40px rgba(255, 165, 0, 0.6);
             position: relative;
             z-index: 2;
@@ -79,9 +95,10 @@
             }
         }
 
+        /* 标题优化（卡通风格+动画） */
         .login-title {
             font-size: 32px;
-            color: #8B4513;
+            color: #8B4513; /* 棕色调文字 */
             text-align: center;
             margin-bottom: 35px;
             text-shadow: 3px 3px 6px #FFD700;
@@ -102,6 +119,7 @@
             position: relative;
         }
 
+        /* 标签优化（暖色调） */
         .form-label {
             display: block;
             color: #8B4513;
@@ -111,12 +129,13 @@
             text-shadow: 1px 1px 2px #FFE4B5;
         }
 
+        /* 输入框优化（透明度60%，提升可读性） */
         .form-input {
             width: 100%;
             padding: 14px;
-            border: 4px solid #A0522D;
+            border: 4px solid #A0522D; /* 棕色边框 */
             border-radius: 15px;
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.6); /* 透明度60% */
             color: #8B4513;
             font-size: 18px;
             transition: all 0.3s ease;
@@ -135,6 +154,7 @@
             border-color: #FFD700;
         }
 
+        /* 登录按钮优化（渐变+卡通风格） */
         .login-btn {
             width: 100%;
             padding: 14px;
@@ -162,6 +182,7 @@
             transform: translateY(-2px) rotate(0deg) scale(0.98);
         }
 
+        /* 注册链接优化 */
         .register-link {
             text-align: center;
             margin-top: 25px;
@@ -183,6 +204,7 @@
             display: inline-block;
         }
 
+        /* 移动端适配 */
         @media (max-width: 375px) {
             .login-container {
                 padding: 35px 25px;
@@ -234,14 +256,18 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // Supabase配置
-    const SUPABASE_URL = 'https://twzpessassvmnnbrnegd.supabase.co';
+    // Supabase配置 - 使用您提供的正确配置
+    const SUPABASE_URL = 'https://sgwbztuizxowiacpwzmy.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnd2J6dHVpenhvd2lhY3B3em15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMzIyMDYsImV4cCI6MjA3OTkwODIwNn0.js6fUBJ9FGRMkVgp80Q-8D6hX-xXbr29rWKyJgOA9b4';
+
+    // 创建 Supabase 客户端
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    console.log('Supabase 初始化完成:', supabase);
 
     const loginForm = document.getElementById('loginForm');
 
-    loginForm.addEventListener('submit', async function (e) {
+    loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         console.log('登录表单提交');
 
@@ -255,19 +281,20 @@
 
         try {
             console.log('开始查询用户:', username);
+
             // 查询用户
-            const {data: users, error} = await supabase
+            const { data: users, error } = await supabase
                 .from('users')
                 .select('*')
                 .eq('username', username)
                 .eq('password', password);
 
-            console.log('查询用户结果:', users, error);
-
             if (error) {
-                console.error('查询用户错误:', error);
+                console.error('Supabase 查询错误:', error);
                 throw error;
             }
+
+            console.log('查询结果:', users);
 
             if (users && users.length > 0) {
                 const user = users[0];
@@ -298,19 +325,21 @@
     });
 
     // 页面加载时检查管理员账号
-    document.addEventListener('DOMContentLoaded', async function () {
+    document.addEventListener('DOMContentLoaded', async function() {
+        console.log('页面加载完成，检查管理员账号');
+
         try {
             // 检查管理员账号是否存在
-            const {data: adminUser, error} = await supabase
+            const { data: adminUser, error } = await supabase
                 .from('users')
                 .select('*')
                 .eq('username', 'admin')
                 .single();
 
             if (error && error.code === 'PGRST116') {
-                console.log('创建默认管理员账号');
+                console.log('管理员账号不存在，创建默认管理员');
                 // 管理员账号不存在，创建默认管理员
-                const {data: newAdmin, error: createError} = await supabase
+                const { data: newAdmin, error: createError } = await supabase
                     .from('users')
                     .insert([
                         {
@@ -327,24 +356,26 @@
                 if (createError) {
                     console.error('创建管理员账号失败:', createError);
                 } else {
-                    console.log('默认管理员账号已创建');
+                    console.log('默认管理员账号已创建:', newAdmin);
                 }
             } else if (adminUser && adminUser.role !== 'super-admin') {
+                console.log('修复管理员角色');
                 // 修复管理员角色
-                const {error: updateError} = await supabase
+                const { error: updateError } = await supabase
                     .from('users')
-                    .update({role: 'super-admin'})
+                    .update({ role: 'super-admin' })
                     .eq('username', 'admin');
 
                 if (!updateError) {
                     console.log('管理员角色已修复');
                 }
+            } else {
+                console.log('管理员账号已存在:', adminUser);
             }
         } catch (error) {
             console.error('初始化检查失败:', error);
         }
     });
-</script>
 </script>
 </body>
 </html>
