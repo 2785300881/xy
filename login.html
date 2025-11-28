@@ -232,6 +232,7 @@
     </form>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     // Supabase配置
     const SUPABASE_URL = 'https://twzpessassvmnnbrnegd.supabase.co';
@@ -240,8 +241,9 @@
 
     const loginForm = document.getElementById('loginForm');
 
-    loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();  // 确保这行代码存在且执行
+    loginForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        console.log('登录表单提交');
 
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
@@ -252,23 +254,24 @@
         }
 
         try {
-            // 显示加载状态
-            const submitBtn = loginForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '✨ 登录中... ✨';
-            submitBtn.disabled = true;
-
+            console.log('开始查询用户:', username);
             // 查询用户
-            const { data: users, error } = await supabase
+            const {data: users, error} = await supabase
                 .from('users')
                 .select('*')
                 .eq('username', username)
                 .eq('password', password);
 
-            if (error) throw error;
+            console.log('查询用户结果:', users, error);
+
+            if (error) {
+                console.error('查询用户错误:', error);
+                throw error;
+            }
 
             if (users && users.length > 0) {
                 const user = users[0];
+                console.log('登录成功:', user);
 
                 // 存储用户信息到 localStorage
                 localStorage.setItem('isLoggedIn', 'true');
@@ -276,52 +279,38 @@
                 localStorage.setItem('userRole', user.role);
                 localStorage.setItem('userId', user.id);
 
-                // 更新最后登录时间
-                await supabase
-                    .from('users')
-                    .update({ last_login: new Date().toISOString() })
-                    .eq('id', user.id);
-
                 if (user.role === 'admin' || user.role === 'super-admin') {
                     alert('👑 管理员登录成功！欢迎来到校园植被管理系统～');
                 } else {
                     alert('🪴 登录成功！欢迎来到校园植被系统～');
                 }
 
-                // 延迟跳转确保localStorage已保存
                 setTimeout(() => {
                     window.location.href = 'index.html?login=success';
-                }, 500);
-
+                }, 100);
             } else {
                 alert('😥 账号或密码错误，请重试！');
-                // 恢复按钮状态
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
             }
         } catch (error) {
             console.error('登录错误:', error);
-            alert('😥 登录失败，请稍后重试！');
-            // 恢复按钮状态
-            const submitBtn = loginForm.querySelector('button[type="submit"]');
-            submitBtn.innerHTML = '✨ 立即登录 ✨';
-            submitBtn.disabled = false;
+            alert('😥 登录失败，请稍后重试！错误信息：' + error.message);
         }
     });
 
     // 页面加载时检查管理员账号
-    document.addEventListener('DOMContentLoaded', async function() {
+    document.addEventListener('DOMContentLoaded', async function () {
         try {
             // 检查管理员账号是否存在
-            const { data: adminUser, error } = await supabase
+            const {data: adminUser, error} = await supabase
                 .from('users')
                 .select('*')
                 .eq('username', 'admin')
                 .single();
 
             if (error && error.code === 'PGRST116') {
+                console.log('创建默认管理员账号');
                 // 管理员账号不存在，创建默认管理员
-                const { data: newAdmin, error: createError } = await supabase
+                const {data: newAdmin, error: createError} = await supabase
                     .from('users')
                     .insert([
                         {
@@ -342,9 +331,9 @@
                 }
             } else if (adminUser && adminUser.role !== 'super-admin') {
                 // 修复管理员角色
-                const { error: updateError } = await supabase
+                const {error: updateError} = await supabase
                     .from('users')
-                    .update({ role: 'super-admin' })
+                    .update({role: 'super-admin'})
                     .eq('username', 'admin');
 
                 if (!updateError) {
@@ -355,6 +344,7 @@
             console.error('初始化检查失败:', error);
         }
     });
+</script>
 </script>
 </body>
 </html>
